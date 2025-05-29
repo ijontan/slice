@@ -1,0 +1,22 @@
+
+#include "RigidBody.hpp"
+
+void RigidBodyComponent::Intergrate(float deltaTime)
+{
+	// Linear motion
+	Vector3 acceleration = Vector3Scale(this->force, 1.0f / this->mass);
+	this->velocity = Vector3Add(this->velocity, Vector3Scale(acceleration, deltaTime));
+	this->center = Vector3Add(this->center, Vector3Scale(this->velocity, deltaTime));
+	this->force = (Vector3){0.0f, 0.0f, 0.0f}; // Reset force
+
+	// Angular motion
+	Vector3 angularAcceleration = Vector3Transform(this->torque, this->inverseInertiaTensor);
+	this->angularVelocity = Vector3Add(this->angularVelocity, Vector3Scale(angularAcceleration, deltaTime));
+
+	// Update orientation using quaternion derivative
+	Quaternion omega = (Quaternion){0.0f, this->angularVelocity.x, this->angularVelocity.y, this->angularVelocity.z};
+	Quaternion deltaOrientation = QuaternionMultiply(QuaternionScale(omega, 0.5f * deltaTime), this->orientation);
+	this->orientation = QuaternionNormalize(QuaternionAdd(this->orientation, deltaOrientation));
+	this->torque =
+		(Vector3){0.0f, 0.0f, 0.0f}; // Reset torque   this->torque = (Vector3){0.0f, 0.0f, 0.0f}; // Reset torque
+}
