@@ -1,0 +1,2 @@
+CompileFlags: 
+	Add: [-Wall, -Werror, -Wno-missing-field-initializers, -Wextra, -std=c++17, -Lexternal/raylib-5.5/lib, -lraylib, -I/home/itan/src/slicer_game/includes, -I/home/itan/src/slicer_game/includes/Components, -I/home/itan/src/slicer_game/includes/Entities, -I/home/itan/src/slicer_game/includes/Systems, -I/home/itan/src/slicer_game/includes/utils, -I/home/itan/src/slicer_game/external/raylib-5.5/include, -I/home/itan/src/slicer_game/external/entt/includes]
