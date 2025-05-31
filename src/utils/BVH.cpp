@@ -26,18 +26,43 @@ Vector3 getBoundingBoxCenter(BoundingBox &a)
 	return Vector3Scale(Vector3Add(a.min, a.max), 0.5f);
 }
 
-BVHNode *bvhBuild(std::vector<BoundingBox> &objects, std::vector<entt::entity> entities, int depth)
+BoundingBox getModelBoundingBox(Model &model)
+{
+
+	BoundingBox bb;
+	Mesh &mesh = model.meshes[0];
+
+	Vector3 *vector = reinterpret_cast<Vector3 *>(mesh.vertices);
+	Vector3 p1 = Vector3Transform(*vector, model.transform);
+	bb = {p1, p1};
+	for (int i = 3; i < mesh.vertexCount * 3; i += 3)
+	{
+		Vector3 *vector = reinterpret_cast<Vector3 *>(mesh.vertices + i);
+
+		Vector3 p = Vector3Transform(*vector, model.transform);
+		bb = expandBoundingBox(bb, p);
+	}
+	return bb;
+}
+
+BVHNode *bvhBuild(std::vector<BoundingBox> &objects, std::vector<int> indexes, int depth)
 {
 	BVHNode *node = new BVHNode;
 
-	for (unsigned long i = 0; i < objects.size(); i++)
+	if (indexes.size() <= 2 || depth >= 16)
 	{
-		node->bounds = expandBoundingBox(node->bounds, objects[i]);
-	}
-
-	if (entities.size() <= 2 || depth >= 16)
-	{
-		node->entities = entities;
+		bool first = true;
+		for (int i : indexes)
+		{
+			if (first)
+			{
+				node->bounds = objects[i];
+				first = false;
+				continue;
+			}
+			node->bounds = expandBoundingBox(node->bounds, objects[i]);
+		}
+		node->indexes = indexes;
 		return node;
 	}
 
@@ -49,10 +74,8 @@ BVHNode *bvhBuild(std::vector<BoundingBox> &objects, std::vector<entt::entity> e
 	else if (extent.z > extent.x && extent.z > extent.y)
 		axis = 2;
 
-	std::vector<unsigned long> idx(entities.size());
-	std::iota(idx.begin(), idx.end(), 0);
 	// Sort by center of bounding box on chosen axis
-	std::sort(idx.begin(), idx.end(), [&](int a, int b) {
+	std::sort(indexes.begin(), indexes.end(), [&](int a, int b) {
 		switch (axis)
 		{
 		case 0:
@@ -66,25 +89,15 @@ BVHNode *bvhBuild(std::vector<BoundingBox> &objects, std::vector<entt::entity> e
 		}
 	});
 
-	unsigned long mid = idx.size() / 2;
-	std::vector<entt::entity> left(mid);
-	std::vector<entt::entity> right(mid + idx.size() % 2);
-	std::vector<BoundingBox> leftObjects(mid);
-	std::vector<BoundingBox> rightObjects(mid + idx.size() % 2);
+	unsigned long mid = indexes.size() / 2;
+	std::vector<int> left(indexes.begin(), indexes.begin() + mid);
+	std::vector<int> right(indexes.begin() + mid, indexes.end());
 
-	for (unsigned long i = 0; i < mid; i++)
-	{
-		left.push_back(entities[idx[i]]);
-		right.push_back(entities[idx[i + mid]]);
-		leftObjects.push_back(objects[idx[i]]);
-		rightObjects.push_back(objects[idx[i + mid]]);
-	}
-	if (idx.size() % 2 == 1)
-		right.push_back(*(--entities.end()));
+	node->left = bvhBuild(objects, left, ++depth);
+	node->right = bvhBuild(objects, right, ++depth);
 
-	node->left = bvhBuild(leftObjects, left, ++depth);
-	node->right = bvhBuild(rightObjects, right, ++depth);
-
+	node->bounds = node->left->bounds;
+	node->bounds = expandBoundingBox(node->bounds, node->right->bounds);
 	return node;
 }
 
@@ -100,17 +113,28 @@ void bvhClean(BVHNode *node)
 	delete node;
 }
 
-void bvhDetectCollision(BVHNode *node, BoundingBox &bound, std::vector<entt::entity> &result)
+void bvhDetectCollision(BVHNode *node, BoundingBox &bound, std::vector<int> &result)
 {
 	if (!CheckCollisionBoxes(node->bounds, bound))
 		return;
 
 	if (node->isLeaf())
-		for (auto entity : node->entities)
+		for (auto entity : node->indexes)
 			result.push_back(entity);
 	else
 	{
 		bvhDetectCollision(node->left, bound, result);
 		bvhDetectCollision(node->right, bound, result);
 	}
+}
+
+void bvhDisplay(BVHNode *node)
+{
+	DrawBoundingBox(node->bounds, BLACK);
+	if (node->isLeaf())
+	{
+		return;
+	}
+	bvhDisplay(node->left);
+	bvhDisplay(node->right);
 }

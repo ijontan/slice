@@ -1,35 +1,79 @@
 #include "OBB.hpp"
 #include "raylib.h"
 #include "raymath.h"
+#include <cfloat>
 #include <cmath>
 
-bool checkSeparatingPlane(const Vector3 &RPos, const Vector3 &Plane, const OBB &box1, const OBB &box2)
+void projectOBB(const OBB &box, Vector3 axis, float &min, float &max)
 {
-	return (fabs(Vector3DotProduct(RPos, Plane)) >
-			(fabs(Vector3DotProduct(Vector3Scale(box1.xAxis, box1.halfSize.x), Plane)) +
-			 fabs(Vector3DotProduct(Vector3Scale(box1.yAxis, box1.halfSize.y), Plane)) +
-			 fabs(Vector3DotProduct(Vector3Scale(box1.zAxis, box1.halfSize.z), Plane)) +
-			 fabs(Vector3DotProduct(Vector3Scale(box2.xAxis, box2.halfSize.x), Plane)) +
-			 fabs(Vector3DotProduct(Vector3Scale(box2.yAxis, box2.halfSize.y), Plane)) +
-			 fabs(Vector3DotProduct(Vector3Scale(box2.zAxis, box2.halfSize.z), Plane))));
+	float centerProj = Vector3DotProduct(box.position, axis);
+	float radius = box.halfSize.x * fabs(Vector3DotProduct(box.axis[0], axis)) +
+				   box.halfSize.y * fabs(Vector3DotProduct(box.axis[1], axis)) +
+				   box.halfSize.z * fabs(Vector3DotProduct(box.axis[2], axis));
+
+	min = centerProj - radius;
+	max = centerProj + radius;
 }
 
-// test for separating planes in all 15 axes
-bool checkCollision(const OBB &a, const OBB &b)
+bool overlapOnAxis(const OBB &a, const OBB &b, Vector3 axis, float &minPenetration, Vector3 &smallestAxis)
 {
-	static Vector3 RPos;
-	RPos = Vector3Subtract(b.position, a.position);
+	if (Vector3Length(axis) < 0.0001f)
+		return true; // skip near-zero axes
 
-	return !(checkSeparatingPlane(RPos, a.xAxis, a, b) || checkSeparatingPlane(RPos, a.yAxis, a, b) ||
-			 checkSeparatingPlane(RPos, a.zAxis, a, b) || checkSeparatingPlane(RPos, b.xAxis, a, b) ||
-			 checkSeparatingPlane(RPos, b.yAxis, a, b) || checkSeparatingPlane(RPos, b.zAxis, a, b) ||
-			 checkSeparatingPlane(RPos, Vector3CrossProduct(a.xAxis, b.xAxis), a, b) ||
-			 checkSeparatingPlane(RPos, Vector3CrossProduct(a.xAxis, b.yAxis), a, b) ||
-			 checkSeparatingPlane(RPos, Vector3CrossProduct(a.xAxis, b.zAxis), a, b) ||
-			 checkSeparatingPlane(RPos, Vector3CrossProduct(a.yAxis, b.xAxis), a, b) ||
-			 checkSeparatingPlane(RPos, Vector3CrossProduct(a.yAxis, b.yAxis), a, b) ||
-			 checkSeparatingPlane(RPos, Vector3CrossProduct(a.yAxis, b.zAxis), a, b) ||
-			 checkSeparatingPlane(RPos, Vector3CrossProduct(a.zAxis, b.xAxis), a, b) ||
-			 checkSeparatingPlane(RPos, Vector3CrossProduct(a.zAxis, b.yAxis), a, b) ||
-			 checkSeparatingPlane(RPos, Vector3CrossProduct(a.zAxis, b.zAxis), a, b));
+	axis = Vector3Normalize(axis);
+
+	float minA, maxA;
+	float minB, maxB;
+	projectOBB(a, axis, minA, maxA);
+	projectOBB(b, axis, minB, maxB);
+
+	float overlap = fmin(maxA, maxB) - fmax(minA, minB);
+
+	if (overlap < 0.0f)
+		return false; // Separating axis found
+
+	// Keep smallest penetration axis
+	if (overlap < minPenetration)
+	{
+		minPenetration = overlap;
+		smallestAxis = axis;
+	}
+
+	return true;
+}
+
+bool checkOBBCollision(const OBB &a, const OBB &b, Vector3 &contactNormal, float &penetration)
+{
+	penetration = FLT_MAX;
+	Vector3 smallestAxis;
+
+	Vector3 axes[15];
+	int index = 0;
+
+	// 3 axes from A
+	axes[index++] = a.axis[0];
+	axes[index++] = a.axis[1];
+	axes[index++] = a.axis[2];
+
+	// 3 axes from B
+	axes[index++] = b.axis[0];
+	axes[index++] = b.axis[1];
+	axes[index++] = b.axis[2];
+
+	// 9 cross products
+	for (int i = 0; i < 3; i++)
+		for (int j = 0; j < 3; j++)
+			axes[index++] = Vector3CrossProduct(a.axis[i], b.axis[j]);
+
+	for (int i = 0; i < 15; i++)
+		if (!overlapOnAxis(a, b, axes[i], penetration, smallestAxis))
+			return false; // Separating axis found, no collision
+
+	// Ensure normal points from A to B
+	Vector3 centerDelta = Vector3Subtract(b.position, a.position);
+	if (Vector3DotProduct(centerDelta, smallestAxis) < 0.0f)
+		smallestAxis = Vector3Negate(smallestAxis);
+
+	contactNormal = smallestAxis;
+	return true; // All axes overlapped
 }

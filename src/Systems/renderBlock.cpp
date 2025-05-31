@@ -23,8 +23,8 @@ void renderBlocks(entt::registry &registry, Camera &camera)
 		// angle = angle / PI * 180;
 		// DrawModelEx(box.model, rigidBody.center, axis, angle, {1.0f, 1.0f, 1.0f}, WHITE);
 		// DrawModelWiresEx(box.model, rigidBody.center, axis, angle, {1.0f, 1.0f, 1.0f}, BLACK);
-		DrawModelEx(box.model, {}, {}, 0, {1.0f, 1.0f, 1.0f}, WHITE);
-		DrawModelWiresEx(box.model, {}, {}, 0, {1.0f, 1.0f, 1.0f}, BLACK);
+		DrawModel(box.model, Vector3Zero(), 1, WHITE);
+		DrawModelWires(box.model, Vector3Zero(), 1, BLACK);
 		// DrawBoundingBox(box.boundingBox, BLACK);
 		// DrawMesh(box.mesh, box.material, model);
 	}

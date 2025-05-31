@@ -16,7 +16,7 @@ Scene::Scene()
 	cam.fovy = 60.0f;
 	cam.projection = CAMERA_PERSPECTIVE;
 
-	for (int i = 0; i < 300; i++)
+	for (int i = 0; i < 1000; i++)
 		setupBlock(*this);
 }
 
@@ -62,7 +62,6 @@ void Scene::render()
 	float deltaTime = GetFrameTime();
 	runTime += deltaTime;
 
-	stepPhysicSimulation(m_registry);
 
 	BeginDrawing();
 	ClearBackground(LIGHTGRAY);
@@ -75,6 +74,7 @@ void Scene::render()
 	DrawCube(cam.target, 0.5f, 0.5f, 0.5f, PURPLE);
 	DrawCubeWires(cam.target, 0.5f, 0.5f, 0.5f, DARKPURPLE);
 
+	stepPhysicSimulation(m_registry);
 	EndMode3D();
 
 	EndDrawing();
