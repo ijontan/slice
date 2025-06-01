@@ -32,7 +32,8 @@ void setupBlock(Scene &scene)
 
 	// Vector3 position = {randomFloat(-1, 1), randomFloat(1.5, 10), randomFloat(-1, 1)};
 	Vector3 position = {randomFloat(-50, 50), randomFloat(1, 20), randomFloat(-50, 50)};
-	// Vector3 velocity = {randomFloat(), randomFloat(), randomFloat()};
+	// Vector3 position = {randomFloat(-50, 50), randomFloat(1, 20), randomFloat(0, 0)};
+	// Vector3 velocity = {randomFloat(), 0, 0};
 	Vector3 angularVelocity = {randomFloat(), randomFloat(), randomFloat()};
 	Vector3 velocity = {0, 0, 0};
 	// block.addComponent<RigidBodyComponent>(position, Vector3Scale(velocity, 10), ComputeInverseInertiaTensor(10, 1,
@@ -40,7 +41,7 @@ void setupBlock(Scene &scene)
 	Vector3 dimension = {randomFloat(1, 2), randomFloat(1, 2), randomFloat(1, 2)};
 	OBB obb = {};
 	obb.halfSize = Vector3Scale(dimension, 0.5);
-	block.addComponent<RigidBodyComponent>(position, Vector3Scale(velocity, 10), angularVelocity,
+	block.addComponent<RigidBodyComponent>(10, position, Vector3Scale(velocity, 10), angularVelocity,
 										   ComputeInverseInertiaTensor(10, dimension), obb);
 
 	// Vector3 dimension = {1, 1, 1};

@@ -10,4 +10,5 @@ struct OBB
 };
 
 // obb collision detection
+Vector3 getOBBVertex(const OBB &obb, int index);
 bool checkOBBCollision(const OBB &a, const OBB &b, Vector3 &contactNormal, float &penetration);

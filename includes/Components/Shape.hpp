@@ -4,4 +4,5 @@
 struct BoxComponent
 {
 	Model model;
+	Color color = WHITE;
 };

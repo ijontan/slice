@@ -14,12 +14,4 @@ public:
 	void render();
 
 	entt::registry m_registry;
-
-	Camera cam;
-	Shader shader;
-	float runTime;
-	int viewEyeLoc;
-	int viewCenterLoc;
-	int runTimeLoc;
-	bool cam_lock = false;
 };

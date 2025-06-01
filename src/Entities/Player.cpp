@@ -1,18 +1,35 @@
 #include "Entities/Player.hpp"
 #include "Camera.hpp"
+#include "Entity.hpp"
+#include "RigidBody.hpp"
 #include "Scene.hpp"
+#include "Shape.hpp"
+#include "raylib.h"
 #include "raymath.h"
 
-PlayerEntity::PlayerEntity(Scene *scene)
+void createPlayer(Scene &scene, bool active)
 {
-	entity = scene->createEntity();
-	position = &entity.addComponent<PositionComponent>((Vector3){0.0f, 0.0f, 0.0f});
-	orientation = &entity.addComponent<OrientationComponent>(QuaternionIdentity());
-	Camera camera = {};
-	camera.position = (Vector3){0.0f, 2.0f, 4.0f};
-	camera.target = (Vector3){0.0f, 2.0f, 0.0f};
-	camera.up = (Vector3){0.0f, 1.0f, 0.0f};
-	camera.fovy = 60.0f;
-	camera.projection = CAMERA_PERSPECTIVE;
-	mainCamera = &entity.addComponent<CameraComponent>(camera);
+	Camera cam = {};
+	cam.position = (Vector3){0.0f, 2.0f, 4.0f};
+	cam.target = (Vector3){0.0f, 2.0f, 0.0f};
+	cam.up = (Vector3){0.0f, 1.0f, 0.0f};
+	cam.fovy = 60.0f;
+	cam.projection = CAMERA_PERSPECTIVE;
+
+	Entity player = scene.createEntity();
+	player.addComponent<Camera>(cam);
+
+	Mesh mesh = GenMeshCube(0.5, 0.5, 0.5);
+	Model model = LoadModelFromMesh(mesh);
+	model.transform = MatrixTranslate(cam.target.x, cam.target.y, cam.target.z);
+	player.addComponent<BoxComponent>(model, PURPLE);
+
+	PlayerState state = {};
+	state.active = active;
+	state.camLock = false;
+	player.addComponent<PlayerState>(state);
+
+	OBB obb = {};
+	obb.halfSize = Vector3Scale({0.5, 0.5, 0.5}, 0.5);
+	player.addComponent<RigidBodyComponent>(-10, cam.target, (Vector3){}, (Vector3){}, MatrixIdentity(), obb);
 }

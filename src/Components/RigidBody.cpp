@@ -1,10 +1,13 @@
 
 #include "RigidBody.hpp"
+#include "raymath.h"
 
 void RigidBodyComponent::Intergrate(float deltaTime)
 {
+	if (invMass == 0.0f)
+		return;
 	// Linear motion
-	Vector3 acceleration = Vector3Scale(this->force, 1.0f / this->mass);
+	Vector3 acceleration = Vector3Add(Vector3Scale(this->force, 1.0f / this->mass), {0, 0, 0});
 	this->velocity = Vector3Add(this->velocity, Vector3Scale(acceleration, deltaTime));
 	this->center = Vector3Add(this->center, Vector3Scale(this->velocity, deltaTime));
 	this->force = (Vector3){0.0f, 0.0f, 0.0f}; // Reset force

@@ -4,6 +4,18 @@
 #include <cfloat>
 #include <cmath>
 
+Vector3 getOBBVertex(const OBB &obb, int index)
+{
+    // Assume axes are normalized and scaled to halfSize
+    Vector3 corner = obb.position;
+
+    corner = Vector3Add(corner, Vector3Scale(obb.axis[0], obb.halfSize.x * ((index & 1) ? 1.0f : -1.0f)));
+    corner = Vector3Add(corner, Vector3Scale(obb.axis[1], obb.halfSize.y * ((index & 2) ? 1.0f : -1.0f)));
+    corner = Vector3Add(corner, Vector3Scale(obb.axis[2], obb.halfSize.z * ((index & 4) ? 1.0f : -1.0f)));
+
+    return corner;
+}
+
 void projectOBB(const OBB &box, Vector3 axis, float &min, float &max)
 {
 	float centerProj = Vector3DotProduct(box.position, axis);
@@ -71,7 +83,7 @@ bool checkOBBCollision(const OBB &a, const OBB &b, Vector3 &contactNormal, float
 
 	// Ensure normal points from A to B
 	Vector3 centerDelta = Vector3Subtract(b.position, a.position);
-	if (Vector3DotProduct(centerDelta, smallestAxis) < 0.0f)
+	if (Vector3DotProduct(centerDelta, smallestAxis) > 0.0f)
 		smallestAxis = Vector3Negate(smallestAxis);
 
 	contactNormal = smallestAxis;
