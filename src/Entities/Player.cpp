@@ -31,5 +31,5 @@ void createPlayer(Scene &scene, bool active)
 
 	OBB obb = {};
 	obb.halfSize = Vector3Scale({0.5, 0.5, 0.5}, 0.5);
-	player.addComponent<RigidBodyComponent>(-10, cam.target, (Vector3){}, (Vector3){}, MatrixIdentity(), obb);
+	player.addComponent<RigidBodyComponent>(0, cam.target, (Vector3){}, (Vector3){}, (Matrix){}, obb);
 }

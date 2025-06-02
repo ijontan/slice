@@ -31,7 +31,7 @@ void renderBlocks(entt::registry &registry)
 			// DrawBoundingBox(box.boundingBox, BLACK);
 			// DrawMesh(box.mesh, box.material, model);
 		}
-	DrawPlane((Vector3){0.0f, 0.0f, 0.0f}, (Vector2){1000.0f, 1000.0f}, DARKGRAY); // Draw ground
+		DrawPlane((Vector3){0.0f, 0.0f, 0.0f}, (Vector2){1000.0f, 1000.0f}, DARKGRAY); // Draw ground
 		EndMode3D();
 	}
 }

@@ -31,15 +31,15 @@ Vector3 findDeepestPoint(const OBB &box, Vector3 normal)
 	return deepest;
 }
 
-void resolveCollision(RigidBodyComponent &A, RigidBodyComponent &B, Vector3 contactPoint, Vector3 contactNormal,
+void resolveCollision(RigidBodyComponent &a, RigidBodyComponent &b, Vector3 contactPoint, Vector3 contactNormal,
 					  float restitution)
 {
-	Vector3 rA = Vector3Subtract(contactPoint, A.center);
-	Vector3 rB = Vector3Subtract(contactPoint, B.center);
+	Vector3 rA = Vector3Subtract(contactPoint, a.center);
+	Vector3 rB = Vector3Subtract(contactPoint, b.center);
 
 	// Velocity at contact points
-	Vector3 vA = Vector3Add(A.velocity, Vector3CrossProduct(A.angularVelocity, rA));
-	Vector3 vB = Vector3Add(B.velocity, Vector3CrossProduct(B.angularVelocity, rB));
+	Vector3 vA = Vector3Add(a.velocity, Vector3CrossProduct(a.angularVelocity, rA));
+	Vector3 vB = Vector3Add(b.velocity, Vector3CrossProduct(b.angularVelocity, rB));
 	Vector3 relativeVelocity = Vector3Subtract(vA, vB);
 
 	float contactVel = Vector3DotProduct(relativeVelocity, contactNormal);
@@ -52,10 +52,10 @@ void resolveCollision(RigidBodyComponent &A, RigidBodyComponent &B, Vector3 cont
 	Vector3 rAxn = Vector3CrossProduct(rA, contactNormal);
 	Vector3 rBxn = Vector3CrossProduct(rB, contactNormal);
 
-	Vector3 IArAxn = Vector3Transform(rAxn, A.inverseInertiaTensor);
-	Vector3 IBrBxn = Vector3Transform(rBxn, B.inverseInertiaTensor);
+	Vector3 IArAxn = Vector3Transform(rAxn, a.inverseInertiaTensor);
+	Vector3 IBrBxn = Vector3Transform(rBxn, b.inverseInertiaTensor);
 
-	float denom = A.invMass + B.invMass + Vector3DotProduct(contactNormal, Vector3CrossProduct(IArAxn, rA)) +
+	float denom = a.invMass + b.invMass + Vector3DotProduct(contactNormal, Vector3CrossProduct(IArAxn, rA)) +
 				  Vector3DotProduct(contactNormal, Vector3CrossProduct(IBrBxn, rB));
 
 	float j = -(1.0f + restitution) * contactVel / denom;
@@ -63,16 +63,53 @@ void resolveCollision(RigidBodyComponent &A, RigidBodyComponent &B, Vector3 cont
 	Vector3 impulse = Vector3Scale(contactNormal, j);
 
 	// Apply linear impulse
-	A.velocity = Vector3Add(A.velocity, Vector3Scale(impulse, 1.0f / A.mass));
-	B.velocity = Vector3Subtract(B.velocity, Vector3Scale(impulse, 1.0f / B.mass));
+	a.velocity = Vector3Add(a.velocity, Vector3Scale(impulse, a.invMass));
+	b.velocity = Vector3Subtract(b.velocity, Vector3Scale(impulse, b.invMass));
 
 	// Apply angular impulse
-	if (A.invMass > 0.0f)
-		A.angularVelocity =
-			Vector3Add(A.angularVelocity, Vector3Transform(Vector3CrossProduct(rA, impulse), A.inverseInertiaTensor));
-	if (B.invMass > 0.0f)
-		B.angularVelocity = Vector3Subtract(B.angularVelocity,
-											Vector3Transform(Vector3CrossProduct(rB, impulse), B.inverseInertiaTensor));
+	if (a.invMass > 0.0f)
+		a.angularVelocity =
+			Vector3Add(a.angularVelocity, Vector3Transform(Vector3CrossProduct(rA, impulse), a.inverseInertiaTensor));
+	if (b.invMass > 0.0f)
+		b.angularVelocity = Vector3Subtract(b.angularVelocity,
+											Vector3Transform(Vector3CrossProduct(rB, impulse), b.inverseInertiaTensor));
+}
+
+void resolveCollisionWithGround(RigidBodyComponent &body, Vector3 contactNormal, float penetration,
+								Vector3 contactPoint, float restitution)
+{
+	const float linearDamping = 0.98f; // or (1 - dampingFactor * dt)
+	const float angularDamping = 0.98f;
+
+	Vector3 r = Vector3Subtract(contactPoint, body.center);
+
+	Vector3 velocityAtContact = Vector3Add(body.velocity, Vector3CrossProduct(body.angularVelocity, r));
+	float contactVel = Vector3DotProduct(velocityAtContact, contactNormal);
+
+	if (contactVel > 0.0f)
+		return; // moving away
+
+	float invMass = (body.mass > 0.0f) ? 1.0f / body.mass : 0.0f;
+
+	Vector3 rCrossN = Vector3CrossProduct(r, contactNormal);
+	Vector3 inertiaTerm = Vector3Transform(rCrossN, body.inverseInertiaTensor);
+	float angular = Vector3DotProduct(contactNormal, Vector3CrossProduct(inertiaTerm, r));
+
+	float denom = invMass + angular;
+	float j = -(1.0f + restitution) * contactVel / denom;
+
+	Vector3 impulse = Vector3Scale(contactNormal, j);
+
+	body.velocity = Vector3Add(body.velocity, Vector3Scale(impulse, invMass * linearDamping));
+	body.angularVelocity = Vector3Scale(
+		Vector3Add(body.angularVelocity, Vector3Transform(Vector3CrossProduct(r, impulse), body.inverseInertiaTensor)),
+		angularDamping);
+
+	// Positional correction (prevents sinking)
+	const float percent = 0.2f; // penetration correction percent
+	const float slop = 0.01f;	// small offset
+	Vector3 correction = Vector3Scale(contactNormal, percent * fmax(penetration - slop, 0.0f));
+	body.center = Vector3Add(body.center, correction);
 }
 
 void positionalCorrection(RigidBodyComponent &A, RigidBodyComponent &B, Vector3 contactNormal, float penetration)
@@ -80,11 +117,22 @@ void positionalCorrection(RigidBodyComponent &A, RigidBodyComponent &B, Vector3 
 	const float percent = 0.2f; // correction percentage
 	const float slop = 0.01f;	// penetration allowance
 
-	float correctionMagnitude = std::max(penetration - slop, 0.0f) / (1.0f / A.mass + 1.0f / B.mass) * percent;
+	float correctionMagnitude = std::max(penetration - slop, 0.0f) / (A.invMass + B.invMass) * percent;
 	Vector3 correction = Vector3Scale(contactNormal, correctionMagnitude);
 
-	A.center = Vector3Add(A.center, Vector3Scale(correction, 1.0f / A.mass));
-	B.center = Vector3Subtract(B.center, Vector3Scale(correction, 1.0f / B.mass));
+	A.center = Vector3Add(A.center, Vector3Scale(correction, A.invMass));
+	B.center = Vector3Subtract(B.center, Vector3Scale(correction, B.invMass));
+}
+
+void positionalCorrectionGround(RigidBodyComponent &A, Vector3 contactNormal, float penetration)
+{
+	const float percent = 0.2f; // correction percentage
+	const float slop = 0.01f;	// penetration allowance
+
+	float correctionMagnitude = std::max(penetration - slop, 0.0f) / A.invMass * percent;
+	Vector3 correction = Vector3Scale(contactNormal, correctionMagnitude);
+
+	A.center = Vector3Add(A.center, Vector3Scale(correction, A.invMass));
 }
 
 void stepPhysicSimulation(entt::registry &registry)
@@ -131,6 +179,9 @@ void stepPhysicSimulation(entt::registry &registry)
 	// for (auto box : boundingBoxes)
 	// 	DrawBoundingBox(box, BLACK);
 
+	Vector3 groundNormal = {0, 1, 0}; // pointing up
+	float groundHeight = 0.0f;
+
 	for (unsigned long i = 0; i < entities.size(); ++i)
 	{
 		std::vector<int> result;
@@ -149,8 +200,24 @@ void stepPhysicSimulation(entt::registry &registry)
 				if (penetration < 0.001f)
 					continue;
 				Vector3 contactPoint = findDeepestPoint(box2.obb, Vector3Negate(contactNormal));
-				resolveCollision(box1, box2, contactPoint, contactNormal, 1);
+				resolveCollision(box1, box2, contactPoint, contactNormal, 0.6);
 				positionalCorrection(box1, box2, contactNormal, penetration);
+			}
+		}
+	}
+
+	for (auto entity : view)
+	{
+
+		for (int i = 0; i < 8; i++)
+		{
+			RigidBodyComponent &body = registry.get<RigidBodyComponent>(entity);
+			Vector3 vertex = getOBBVertex(body.obb, i); // world-space vertex
+			if (vertex.y < groundHeight)
+			{
+				float penetration = groundHeight - vertex.y;
+				positionalCorrectionGround(body, groundNormal, penetration);
+				resolveCollisionWithGround(body, groundNormal, penetration, vertex, 0.1);
 			}
 		}
 	}

@@ -2,6 +2,8 @@
 #include "Block.hpp"
 #include "Entities/Entity.hpp"
 #include "Player.hpp"
+#include "RigidBody.hpp"
+#include "Shape.hpp"
 #include "Systems/PhysicSystem.hpp"
 #include "Systems/RenderSystem.hpp"
 #include "Systems/PlayerSystem.hpp"
@@ -10,6 +12,14 @@
 
 Scene::Scene()
 {
+	// Entity ground = this->createEntity();
+	// Vector3 dimension = {1000, 1, 1000};
+	// OBB obb = {};
+	// obb.halfSize = Vector3Scale(dimension, 0.5);
+	// ground.addComponent<RigidBodyComponent>(0, (Vector3){0,-0.5,0}, (Vector3){}, (Vector3){},(Matrix){}, obb);
+	// Mesh mesh = GenMeshCube(dimension.x, dimension.y, dimension.z);
+	// Model model = LoadModelFromMesh(mesh);
+	// ground.addComponent<BoxComponent>(model);
 	createPlayer(*this, true);
 	for (int i = 0; i < 1500; i++)
 		setupBlock(*this);
