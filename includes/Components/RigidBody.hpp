@@ -30,4 +30,5 @@ struct RigidBodyComponent
 	}
 	~RigidBodyComponent() = default;
 	void Intergrate(float deltaTime);
+	Matrix getWorldInverseInertiaTensor() const;
 };
