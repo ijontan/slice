@@ -1,6 +1,7 @@
 #include "Entities/Player.hpp"
 #include "Camera.hpp"
 #include "Entity.hpp"
+#include "PlayerState.hpp"
 #include "RigidBody.hpp"
 #include "Scene.hpp"
 #include "Shape.hpp"
@@ -31,5 +32,5 @@ void createPlayer(Scene &scene, bool active)
 
 	OBB obb = {};
 	obb.halfSize = Vector3Scale({0.5, 0.5, 0.5}, 0.5);
-	player.addComponent<RigidBodyComponent>(0, cam.target, (Vector3){}, (Vector3){}, (Matrix){}, obb);
+	player.addComponent<RigidBodyComponent>(10, cam.target, (Vector3){}, (Vector3){}, (Matrix){}, obb);
 }

@@ -8,11 +8,8 @@
 #include "RigidBody.hpp"
 #include "raylib.h"
 #include "raymath.h"
+#include "math.hpp"
 
-float randomFloat(float min = -1.0f, float max = 1.0f)
-{
-	return min + static_cast<float>(std::rand()) / (static_cast<float>(RAND_MAX) / (max - min));
-}
 
 Matrix ComputeInverseInertiaTensor(float mass, Vector3 dimension)
 {

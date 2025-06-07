@@ -29,6 +29,6 @@ struct RigidBodyComponent
 		invMass = mass > 0.0f ? 1.0f / mass : 0.0f;
 	}
 	~RigidBodyComponent() = default;
-	void Intergrate(float deltaTime);
+	void intergrate(float deltaTime);
 	Matrix getWorldInverseInertiaTensor() const;
 };

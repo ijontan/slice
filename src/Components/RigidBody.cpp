@@ -4,15 +4,10 @@
 #include "raymath.h"
 #include <cmath>
 
-void RigidBodyComponent::Intergrate(float deltaTime)
+void RigidBodyComponent::intergrate(float deltaTime)
 {
 	if (invMass <= 0.0f)
 		return;
-
-	// --- Apply Gravity ---
-	const Vector3 gravity = {0.0f, -9.81f, 0.0f};
-	if (mass > 0)
-		force = Vector3Add(force, Vector3Scale(gravity, mass));
 
 	// --- Linear Motion ---
 	Vector3 acceleration = Vector3Scale(force, invMass);
