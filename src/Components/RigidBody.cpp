@@ -35,9 +35,10 @@ void RigidBodyComponent::intergrate(float deltaTime)
 		angularVelocity = {0, 0, 0};
 
 	// --- Update Orientation ---
-	Quaternion omega = {angularVelocity.x, angularVelocity.y, angularVelocity.z, 0.0f};
-	Quaternion deltaOrientation = QuaternionMultiply(orientation, QuaternionScale(omega, 0.5f * deltaTime));
-	orientation = QuaternionNormalize(QuaternionAdd(orientation, deltaOrientation));
+	Quaternion delta =
+		QuaternionMultiply((Quaternion){angularVelocity.x, angularVelocity.y, angularVelocity.z, 0.0f}, orientation);
+	delta = QuaternionScale(delta, 0.5f * deltaTime);
+	orientation = QuaternionNormalize(QuaternionAdd(orientation, delta));
 
 	torque = (Vector3){0.0f, 0.0f, 0.0f};
 }
@@ -45,7 +46,6 @@ void RigidBodyComponent::intergrate(float deltaTime)
 Matrix RigidBodyComponent::getWorldInverseInertiaTensor() const
 {
 	Matrix rot = QuaternionToMatrix(orientation);
-	Matrix rotT = QuaternionToMatrix(QuaternionInvert(orientation));
-	// Matrix rotT = MatrixTranspose(rot);
+	Matrix rotT = MatrixTranspose(rot);
 	return MatrixMultiply(MatrixMultiply(rot, inverseInertiaTensor), rotT);
 }

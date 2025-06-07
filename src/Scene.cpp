@@ -9,21 +9,23 @@
 #include "Systems/PlayerSystem.hpp"
 #include "Systems/RenderSystem.hpp"
 #include "raylib.h"
+#include "raymath.h"
 #include <numeric>
 
 Scene::Scene()
 {
-	// Entity a = setupBlock(*this, {2, 1, 0}, {1, 1, 1}, {0, 0, 0}, {0, 0, 0});
-	// Entity b = setupBlock(*this, {2, 2, 0}, {1, 1, 1}, {0, 0, 0}, {0, 0, 0});
-	// FixedJoint joint;
-	// auto &bodyA = m_registry.get<RigidBodyComponent>(a);
-	// auto &bodyB = m_registry.get<RigidBodyComponent>(b);
-	// joint.a = a;
-	// joint.b = b;
-	// joint.localAnchorA = {0, 0.5, 0};
-	// joint.localAnchorB = {0, -0.5, 0};
-	// joint.initialRotationOffset = QuaternionMultiply(QuaternionInvert(bodyA.orientation), bodyB.orientation);
-	// b.addComponent<FixedJoint>(joint);
+	Entity a = setupBlock(*this, {2, 1, 0}, {1, 1, 1}, {0, 0, 0}, {0, 0, 0});
+	Entity b = setupBlock(*this, {2, 2.1, 0}, {1, 1, 1}, {0, 0, 0}, {0, 0, 0});
+	FixedJoint joint;
+	auto &bodyA = m_registry.get<RigidBodyComponent>(a);
+	auto &bodyB = m_registry.get<RigidBodyComponent>(b);
+	joint.a = a;
+	joint.b = b;
+	joint.localAnchorA = {0, 0.55, 0};
+	joint.localAnchorB = {0, -0.55, 0};
+	joint.initialRotationOffset =
+		QuaternionNormalize(QuaternionMultiply(QuaternionInvert(bodyA.orientation), bodyB.orientation));
+	b.addComponent<FixedJoint>(joint);
 	createPlayer(*this, true);
 	for (int i = 0; i < 1000; i++)
 		setupBlock(*this);

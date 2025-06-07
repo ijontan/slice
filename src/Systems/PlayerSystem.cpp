@@ -60,7 +60,7 @@ void playerSystem(entt::registry &registry)
 		rigidBody.velocity = Vector3ClampValue(rigidBody.velocity, -maxSpeed, maxSpeed);
 
 		cam.target = rigidBody.center;
-		float camDistance = boost ? 15.0f : 10.0f;
+		float camDistance = boost ? 12.0f : 7.0f;
 		Vector3 positionTarget = Vector3Add(cam.target, Vector3Scale(moveDirection, -camDistance));
 		cam.position = Vector3Lerp(positionTarget, cam.position, amount);
 		cam.up = camUp;

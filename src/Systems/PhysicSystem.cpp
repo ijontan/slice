@@ -32,6 +32,17 @@ Vector3 findDeepestPoint(const OBB &box, Vector3 normal)
 	return deepest;
 }
 
+Vector3 QuaternionLogSafe(Quaternion q)
+{
+	float sinTheta = sqrtf(q.x * q.x + q.y * q.y + q.z * q.z);
+	if (sinTheta < 1e-6f)
+		return (Vector3){0, 0, 0};
+
+	float angle = acosf(q.w) * 2.0f;
+	float scale = angle / sinTheta;
+	return (Vector3){q.x * scale, q.y * scale, q.z * scale};
+}
+
 void solveJoints(entt::registry &registry)
 {
 	auto view = registry.view<FixedJoint>();
@@ -45,35 +56,49 @@ void solveJoints(entt::registry &registry)
 		auto &b = registry.get<RigidBodyComponent>(joint.b);
 		if (a.invMass == 0.0f && b.invMass == 0.0f)
 			continue;
-		//
-		//================================================================
+
+		// ================================================================
 		// 1. Angular Constraint - Forcing bodies to have a fixed relative orientation
-		//================================================================
-		// // --- Orientation constraint ---
+		// ================================================================
 		{
 			// The error is the difference between the current relative orientation and the target
 			Quaternion currentRelativeOrientation = QuaternionMultiply(QuaternionInvert(a.orientation), b.orientation);
 			Quaternion orientationError =
 				QuaternionMultiply(currentRelativeOrientation, QuaternionInvert(joint.initialRotationOffset));
 
-			// Convert the error quaternion to an axis-angle representation. The axis is the direction
-			// of the corrective torque, and the angle is the amount of error.
-			Vector3 axis;
-			float angle;
-			QuaternionToAxisAngle(orientationError, &axis, &angle);
-
-			// We want to cancel out relative angular velocity and correct the position error (angle)
+			if (orientationError.w < 0.0f)
+			{
+				orientationError.x = -orientationError.x;
+				orientationError.y = -orientationError.y;
+				orientationError.z = -orientationError.z;
+				orientationError.w = -orientationError.w;
+			}
+			Quaternion target = QuaternionNormalize(
+				QuaternionMultiply(QuaternionInvert(joint.initialRotationOffset), orientationError));
+			if (target.w < 0.0f)
+			{
+				target.x = -target.x;
+				target.y = -target.y;
+				target.z = -target.z;
+				target.w = -target.w;
+			}
+			Vector3 axis = QuaternionLogSafe(target);
+			if (Vector3LengthSqr(axis) < 1e-6f)
+				continue;
 			Vector3 relativeAngularVelocity = Vector3Subtract(b.angularVelocity, a.angularVelocity);
 
 			// Baumgarte stabilization to correct the orientation error over time
-			float baumgarte = 0.2f;
-			Vector3 bias = Vector3Scale(axis, (baumgarte / deltaTime) * angle);
+			float baumgarte = 0.05f;
+			float scale = baumgarte / deltaTime;
+			if (scale > 0.5)
+				scale = 0.5;
+			Vector3 bias = Vector3Scale(axis, scale);
 
 			// Calculate effective angular mass (same as in the slider joint)
 			Matrix worldInvInertiaA = a.getWorldInverseInertiaTensor();
 			Matrix worldInvInertiaB = b.getWorldInverseInertiaTensor();
 			Matrix invAngularMass = MatrixInvert(MatrixAdd(worldInvInertiaA, worldInvInertiaB));
-
+			//
 			// Calculate the impulse needed to counteract velocity and correct position
 			Vector3 angularImpulse =
 				Vector3Transform(Vector3Negate(Vector3Add(relativeAngularVelocity, bias)), invAngularMass);
@@ -117,7 +142,7 @@ void solveJoints(entt::registry &registry)
 				Vector3 relativeVelocity = Vector3Subtract(vB, vA);
 				float contactVel = Vector3DotProduct(relativeVelocity, errorNormal);
 
-				float baumgarte = 0.2f;
+				float baumgarte = 0.4f;
 				float bias = (baumgarte / deltaTime) * errorMagnitude;
 
 				// Calculate the denominator for the impulse magnitude 'j'
@@ -282,6 +307,12 @@ void stepPhysicSimulation(entt::registry &registry)
 			{
 				if (penetration < 0.01f)
 					continue;
+				if (registry.any_of<FixedJoint>(entities[i]))
+				{
+					FixedJoint &joint = registry.get<FixedJoint>(entities[i]);
+					if (joint.a == entities[idx])
+						continue;
+				}
 				Vector3 contactPoint = findDeepestPoint(box2.obb, contactNormal);
 				resolveCollision(box1, box2, contactPoint, contactNormal, 0.6);
 				positionalCorrection(box1, box2, contactNormal, penetration);
