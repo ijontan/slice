@@ -36,9 +36,11 @@ void playerSystem(entt::registry &registry)
 		if (IsKeyDown(KEY_LEFT_SHIFT))
 			rigidBody.force = Vector3Scale(Vector3Negate(rigidBody.velocity), 20);
 
+		bool boost = false;
 		if (IsKeyDown(KEY_W) || IsKeyDown(KEY_S) || IsKeyDown(KEY_A) || IsKeyDown(KEY_D))
 		{
-			float scale = IsKeyDown(KEY_SPACE) ? 300.0f : 100.0f;
+			boost = IsKeyDown(KEY_SPACE);
+			float scale = boost ? 900.0f : 300.0f;
 			amount = 1;
 			float value = (IsKeyDown(KEY_W) * scale) - (IsKeyDown(KEY_S) * scale);
 			rigidBody.force = Vector3Scale(moveDirection, value);
@@ -54,11 +56,11 @@ void playerSystem(entt::registry &registry)
 		if (amount > 0)
 			amount -= 0.05;
 
-		float maxSpeed = IsKeyDown(KEY_SPACE) ? 30.0f : 10.0f;
+		float maxSpeed = boost ? 40.0f : 20.0f;
 		rigidBody.velocity = Vector3ClampValue(rigidBody.velocity, -maxSpeed, maxSpeed);
 
 		cam.target = rigidBody.center;
-		float camDistance = IsKeyDown(KEY_SPACE) ? 15.0f : 10.0f;
+		float camDistance = boost ? 15.0f : 10.0f;
 		Vector3 positionTarget = Vector3Add(cam.target, Vector3Scale(moveDirection, -camDistance));
 		cam.position = Vector3Lerp(positionTarget, cam.position, amount);
 		cam.up = camUp;

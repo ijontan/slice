@@ -1,4 +1,5 @@
 // #include "Position.hpp"
+#include "Block.hpp"
 #include "Entity.hpp"
 #include "OBB.hpp"
 #include "Position.hpp"
@@ -6,43 +7,42 @@
 // #include "raymath.h"
 #include "Components/Shape.hpp"
 #include "RigidBody.hpp"
+#include "math.hpp"
 #include "raylib.h"
 #include "raymath.h"
-#include "math.hpp"
-
 
 Matrix ComputeInverseInertiaTensor(float mass, Vector3 dimension)
 {
-	float factor = 12.0f / mass;
-	float ixx = factor / (dimension.x * dimension.x + dimension.z * dimension.z);
-	float iyy = factor / (dimension.y * dimension.y + dimension.z * dimension.z);
-	float izz = factor / (dimension.y * dimension.y + dimension.x * dimension.x);
+	// Dimensions are full extents, not half extents
+	float w = dimension.x;
+	float h = dimension.y;
+	float d = dimension.z;
 
-	Matrix inverseInertia = {ixx,  0.0f, 0.0f, 0.0f, 0.0f, iyy,	 0.0f, 0.0f,
-							 0.0f, 0.0f, izz,  0.0f, 0.0f, 0.0f, 0.0f, 1.0f};
-	return inverseInertia;
+	float ix = (1.0f / 12.0f) * mass * (h * h + d * d);
+	float iy = (1.0f / 12.0f) * mass * (w * w + d * d);
+	float iz = (1.0f / 12.0f) * mass * (w * w + h * h);
+
+	Matrix inertia = {
+		ix, 0,  0,  0,
+		0,  iy, 0,  0,
+		0,  0,  iz, 0,
+		0,  0,  0,  1,
+	};
+
+	return MatrixInvert(inertia);
 }
 
-void setupBlock(Scene &scene)
+Entity setupBlock(Scene &scene, Vector3 position, Vector3 dimension, Vector3 angularVelocity, Vector3 velocity)
 {
 	Entity block = scene.createEntity();
 
-	// Vector3 position = {randomFloat(-1, 1), randomFloat(1.5, 10), randomFloat(-1, 1)};
-	Vector3 position = {randomFloat(-50, 50), randomFloat(1, 20), randomFloat(-50, 50)};
-	// Vector3 position = {randomFloat(-50, 50), randomFloat(1, 20), randomFloat(0, 0)};
-	// Vector3 velocity = {randomFloat(), 0, 0};
-	Vector3 angularVelocity = {randomFloat(), randomFloat(), randomFloat()};
-	Vector3 velocity = {0, 0, 0};
-	// block.addComponent<RigidBodyComponent>(position, Vector3Scale(velocity, 10), ComputeInverseInertiaTensor(10, 1,
-	// 1, 1));
-	Vector3 dimension = {randomFloat(1, 2), randomFloat(1, 2), randomFloat(1, 2)};
 	OBB obb = {};
 	obb.halfSize = Vector3Scale(dimension, 0.5);
 	block.addComponent<RigidBodyComponent>(10, position, Vector3Scale(velocity, 10), angularVelocity,
 										   ComputeInverseInertiaTensor(10, dimension), obb);
 
-	// Vector3 dimension = {1, 1, 1};
 	Mesh mesh = GenMeshCube(dimension.x, dimension.y, dimension.z);
 	Model model = LoadModelFromMesh(mesh);
 	block.addComponent<BoxComponent>(model);
+	return block;
 }

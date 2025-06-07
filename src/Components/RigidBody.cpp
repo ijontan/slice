@@ -28,15 +28,15 @@ void RigidBodyComponent::intergrate(float deltaTime)
 	Vector3 angularAcceleration = Vector3Transform(torque, worldInvInertia);
 	angularVelocity = Vector3Add(angularVelocity, Vector3Scale(angularAcceleration, deltaTime));
 
-	float angularDampingFactor = 0.1f;
+	float angularDampingFactor = 0.01f;
 	float angularDamping = powf(1.0f - angularDampingFactor, deltaTime);
 	angularVelocity = Vector3Scale(angularVelocity, angularDamping);
-	if (Vector3LengthSqr(angularVelocity) < 0.001f)
+	if (Vector3LengthSqr(angularVelocity) < 0.00001f)
 		angularVelocity = {0, 0, 0};
 
 	// --- Update Orientation ---
-	Quaternion omega = {0.0f, angularVelocity.x, angularVelocity.y, angularVelocity.z};
-	Quaternion deltaOrientation = QuaternionMultiply(QuaternionScale(omega, 0.5f * deltaTime), orientation);
+	Quaternion omega = {angularVelocity.x, angularVelocity.y, angularVelocity.z, 0.0f};
+	Quaternion deltaOrientation = QuaternionMultiply(orientation, QuaternionScale(omega, 0.5f * deltaTime));
 	orientation = QuaternionNormalize(QuaternionAdd(orientation, deltaOrientation));
 
 	torque = (Vector3){0.0f, 0.0f, 0.0f};
@@ -45,6 +45,7 @@ void RigidBodyComponent::intergrate(float deltaTime)
 Matrix RigidBodyComponent::getWorldInverseInertiaTensor() const
 {
 	Matrix rot = QuaternionToMatrix(orientation);
-	Matrix rotT = MatrixTranspose(rot);
+	Matrix rotT = QuaternionToMatrix(QuaternionInvert(orientation));
+	// Matrix rotT = MatrixTranspose(rot);
 	return MatrixMultiply(MatrixMultiply(rot, inverseInertiaTensor), rotT);
 }

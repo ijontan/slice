@@ -1,4 +1,5 @@
 #include "Entity.hpp"
+#include "error.hpp"
 #include <vector>
 
 enum EnemyType
@@ -15,27 +16,46 @@ enum EnemyPartType
 	DEFAULT,
 };
 
+struct IVector3
+{
+	int x;
+	int y;
+	int z;
+};
+
 struct EnemyPart
 {
 	EnemyPartType type;
+	bool isAttached;
 	Entity entity;
 };
 
 struct EnemyState
 {
-	int xlen;
-	int ylen;
-	int zlen;
+	IVector3 size;
+	std::vector<IVector3> cores;
 	std::vector<EnemyPart> parts;
-	std::vector<EnemyPartType> blueprint;
+	float regenDuration;
+	float timePassedLastRegen;
 
 	int getSize()
 	{
-		return xlen + ylen + zlen;
+		return size.x + size.y + size.z;
 	}
 
-	EnemyPart &getPartRef(int x, int y, int z)
+	IVector3 getCoordFromIndex(int i)
 	{
-		return parts[x + y * xlen + z * xlen * ylen];
+		int z = i / (size.x * size.y);
+		int y = i % (size.x * size.y) / size.x;
+		int x = i % (size.x * size.y) % size.x;
+		return {x, y, z};
+	}
+
+	EnemyPart &getPartRef(IVector3 coord)
+	{
+		int i = coord.x + coord.y * size.x + coord.z * size.x * size.y;
+		if (i > getSize())
+			throw Error("getPartRef: ", "exceed max size.");
+		return parts[i];
 	}
 };

@@ -9,25 +9,21 @@ void createEnemy(Scene &scene)
 	Entity emeny = scene.createEntity();
 	(void)emeny;
 	EnemyState state = {};
-	state.xlen = 3;
-	state.ylen = 3;
-	state.zlen = 3;
+	state.size = {3, 3, 3};
 
 	int size = state.getSize();
 	state.parts.reserve(size);
-	state.blueprint.reserve(size);
 
 	int coreIndex = randomInt(0, size - 1);
+	state.cores.push_back(state.getCoordFromIndex(coreIndex));
+
 	for (int i = 0; i < size; i++)
 	{
 		EnemyPart part = {};
-
-		part.entity = scene.createEntity();
 		if (i == coreIndex)
 			part.type = CORE;
 		else
 			part.type = DEFAULT;
-		state.blueprint.push_back(part.type);
 		state.parts.push_back(part);
 	}
 }

@@ -1,27 +1,31 @@
 
 #include "Block.hpp"
 #include "Entities/Entity.hpp"
+#include "FixedJoint.hpp"
 #include "Player.hpp"
 #include "RigidBody.hpp"
 #include "Shape.hpp"
 #include "Systems/PhysicSystem.hpp"
-#include "Systems/RenderSystem.hpp"
 #include "Systems/PlayerSystem.hpp"
+#include "Systems/RenderSystem.hpp"
 #include "raylib.h"
 #include <numeric>
 
 Scene::Scene()
 {
-	// Entity ground = this->createEntity();
-	// Vector3 dimension = {1000, 1, 1000};
-	// OBB obb = {};
-	// obb.halfSize = Vector3Scale(dimension, 0.5);
-	// ground.addComponent<RigidBodyComponent>(0, (Vector3){0,-0.5,0}, (Vector3){}, (Vector3){},(Matrix){}, obb);
-	// Mesh mesh = GenMeshCube(dimension.x, dimension.y, dimension.z);
-	// Model model = LoadModelFromMesh(mesh);
-	// ground.addComponent<BoxComponent>(model);
+	// Entity a = setupBlock(*this, {2, 1, 0}, {1, 1, 1}, {0, 0, 0}, {0, 0, 0});
+	// Entity b = setupBlock(*this, {2, 2, 0}, {1, 1, 1}, {0, 0, 0}, {0, 0, 0});
+	// FixedJoint joint;
+	// auto &bodyA = m_registry.get<RigidBodyComponent>(a);
+	// auto &bodyB = m_registry.get<RigidBodyComponent>(b);
+	// joint.a = a;
+	// joint.b = b;
+	// joint.localAnchorA = {0, 0.5, 0};
+	// joint.localAnchorB = {0, -0.5, 0};
+	// joint.initialRotationOffset = QuaternionMultiply(QuaternionInvert(bodyA.orientation), bodyB.orientation);
+	// b.addComponent<FixedJoint>(joint);
 	createPlayer(*this, true);
-	for (int i = 0; i < 1500; i++)
+	for (int i = 0; i < 1000; i++)
 		setupBlock(*this);
 }
 
@@ -51,11 +55,7 @@ void Scene::render()
 
 	renderBlocks(m_registry);
 
-	// BeginMode3D(cam);
-
 	stepPhysicSimulation(m_registry);
-
-	// EndMode3D();
 
 	EndDrawing();
 }
