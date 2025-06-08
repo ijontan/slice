@@ -36,8 +36,9 @@ struct RigidBodyComponent
 	RigidBodyComponent() = default;
 	RigidBodyComponent(float mass, Vector3 center, Vector3 velocity, Vector3 angularVelocity, CollisionMask category,
 					   unsigned int mask, Matrix inverseInertiaTensor, OBB obb, Quaternion orientation)
-		: mass(mass), center(center), velocity(velocity), orientation(orientation), angularVelocity(angularVelocity),
-		  category(category), mask(mask), inverseInertiaTensor(inverseInertiaTensor), obb(obb)
+		: mass(mass), center(center), velocity(velocity), force(Vector3Zero()), orientation(orientation),
+		  angularVelocity(angularVelocity), torque(Vector3Zero()), category(category), mask(mask),
+		  inverseInertiaTensor(inverseInertiaTensor), obb(obb)
 
 	{
 		invMass = mass > 0.0f ? 1.0f / mass : 0.0f;

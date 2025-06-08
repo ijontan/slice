@@ -27,6 +27,7 @@ struct EnemyPart
 {
 	EnemyPartType type;
 	bool isAttached;
+	bool isNew;
 	Entity entity;
 	Vector3 halfSize;
 };

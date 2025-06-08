@@ -87,11 +87,11 @@ void solveJoints(entt::registry &registry)
 
 			// Clamp correction
 			float angle = Vector3Length(angularError);
-			if (angle > 0.6f)
-				angularError = Vector3Scale(Vector3Normalize(angularError), 0.6f);
+			if (angle > 0.4f)
+				angularError = Vector3Scale(Vector3Normalize(angularError), 0.4f);
 
 			// Scale down for stability
-			angularError = Vector3Scale(angularError, 0.2f);
+			angularError = Vector3Scale(angularError, 0.3f);
 
 			// Apply half to each body (directly, not through inertia)
 			if (a.invMass > 0.0f && b.invMass > 0.0f)
@@ -143,7 +143,7 @@ void solveJoints(entt::registry &registry)
 			if (k > 0.0f)
 			{
 				float lambda = -errorLength / k;
-				Vector3 impulse = Vector3Scale(dir, lambda * 0.1);
+				Vector3 impulse = Vector3Scale(dir, lambda * 0.2);
 				if (Vector3Length(impulse) > 0.3f)
 					impulse = Vector3Scale(Vector3Normalize(impulse), 0.3f);
 
@@ -239,7 +239,7 @@ void stepPhysicSimulation(entt::registry &registry)
 	entities.reserve(view.size_hint());
 	boundingBoxes.reserve(view.size_hint());
 
-	for (int i = 0; i < 100; ++i)
+	for (int i = 0; i < 70; ++i)
 		solveJoints(registry);
 
 	for (auto entity : view)

@@ -44,6 +44,8 @@ void playerSystem(entt::registry &registry)
 			amount = 1;
 			float value = (IsKeyDown(KEY_W) * scale) - (IsKeyDown(KEY_S) * scale);
 			rigidBody.force = Vector3Scale(moveDirection, value);
+			value = (IsKeyDown(KEY_D) * 80.0f) - (IsKeyDown(KEY_A) * 80.0f);
+			rigidBody.force = Vector3Add(rigidBody.force, Vector3Scale(camRight, value));
 		}
 		if (!state.camLock)
 		{
