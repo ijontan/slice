@@ -2,5 +2,5 @@
 
 #include "Scene.hpp"
 
-void enemyRegenBodySystem(Scene *scene);
+void enemyRegenBodySystem(entt::registry &registry, Scene &scene);
 

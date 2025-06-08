@@ -32,150 +32,135 @@ Vector3 findDeepestPoint(const OBB &box, Vector3 normal)
 	return deepest;
 }
 
-Vector3 QuaternionLogSafe(Quaternion q)
+Vector3 QuaternionLog(Quaternion q)
 {
 	float sinTheta = sqrtf(q.x * q.x + q.y * q.y + q.z * q.z);
-	if (sinTheta < 1e-6f)
-		return (Vector3){0, 0, 0};
+	float theta = acosf(Clamp(q.w, -1.0f, 1.0f)); // Clamp for safety
 
-	float angle = acosf(q.w) * 2.0f;
-	float scale = angle / sinTheta;
-	return (Vector3){q.x * scale, q.y * scale, q.z * scale};
+	if (sinTheta < 1e-6f || theta < 1e-6f)
+		return {0.0f, 0.0f, 0.0f};
+
+	float scale = theta / sinTheta;
+	return {q.x * scale, q.y * scale, q.z * scale};
+}
+Quaternion QuaternionExp(Vector3 v)
+{
+	float theta = Vector3Length(v);
+	if (theta < 1e-6f)
+		return {0.0f, 0.0f, 0.0f, 1.0f}; // No rotation
+
+	float sinTheta = sinf(theta);
+	float cosTheta = cosf(theta);
+	float scale = sinTheta / theta;
+
+	return {v.x * scale, v.y * scale, v.z * scale, cosTheta};
 }
 
 void solveJoints(entt::registry &registry)
 {
 	auto view = registry.view<FixedJoint>();
-	float deltaTime = GetFrameTime();
 
 	for (auto entity : view)
 	{
 		auto &joint = registry.get<FixedJoint>(entity);
-
 		auto &a = registry.get<RigidBodyComponent>(joint.a);
 		auto &b = registry.get<RigidBodyComponent>(joint.b);
+
 		if (a.invMass == 0.0f && b.invMass == 0.0f)
 			continue;
 
-		// ================================================================
-		// 1. Angular Constraint - Forcing bodies to have a fixed relative orientation
-		// ================================================================
+		//==================================================
+		// 1. Angular Constraint - Match Relative Orientation
 		{
-			// The error is the difference between the current relative orientation and the target
-			Quaternion currentRelativeOrientation = QuaternionMultiply(QuaternionInvert(a.orientation), b.orientation);
-			Quaternion orientationError =
-				QuaternionMultiply(currentRelativeOrientation, QuaternionInvert(joint.initialRotationOffset));
+			Quaternion qRel = QuaternionMultiply(QuaternionInvert(a.orientation), b.orientation);
+			Quaternion qError = QuaternionMultiply(qRel, QuaternionInvert(joint.initialRotationOffset));
 
-			if (orientationError.w < 0.0f)
+			if (qError.w < 0)
 			{
-				orientationError.x = -orientationError.x;
-				orientationError.y = -orientationError.y;
-				orientationError.z = -orientationError.z;
-				orientationError.w = -orientationError.w;
+				qError.x = -qError.x;
+				qError.y = -qError.y;
+				qError.z = -qError.z;
+				qError.w = -qError.w;
 			}
-			Quaternion target = QuaternionNormalize(
-				QuaternionMultiply(QuaternionInvert(joint.initialRotationOffset), orientationError));
-			if (target.w < 0.0f)
+
+			Vector3 angularError = QuaternionLog(qError);
+
+			// Clamp correction
+			float angle = Vector3Length(angularError);
+			if (angle > 0.6f)
+				angularError = Vector3Scale(Vector3Normalize(angularError), 0.6f);
+
+			// Scale down for stability
+			angularError = Vector3Scale(angularError, 0.2f);
+
+			// Apply half to each body (directly, not through inertia)
+			if (a.invMass > 0.0f && b.invMass > 0.0f)
 			{
-				target.x = -target.x;
-				target.y = -target.y;
-				target.z = -target.z;
-				target.w = -target.w;
+				Quaternion delta = QuaternionExp(Vector3Scale(angularError, 0.5f));
+				a.orientation = QuaternionNormalize(QuaternionMultiply(delta, a.orientation));
+				b.orientation = QuaternionNormalize(QuaternionMultiply(b.orientation, QuaternionInvert(delta)));
 			}
-			Vector3 axis = QuaternionLogSafe(target);
-			if (Vector3LengthSqr(axis) < 1e-6f)
-				continue;
-			Vector3 relativeAngularVelocity = Vector3Subtract(b.angularVelocity, a.angularVelocity);
-
-			// Baumgarte stabilization to correct the orientation error over time
-			float baumgarte = 0.05f;
-			float scale = baumgarte / deltaTime;
-			if (scale > 0.5)
-				scale = 0.5;
-			Vector3 bias = Vector3Scale(axis, scale);
-
-			// Calculate effective angular mass (same as in the slider joint)
-			Matrix worldInvInertiaA = a.getWorldInverseInertiaTensor();
-			Matrix worldInvInertiaB = b.getWorldInverseInertiaTensor();
-			Matrix invAngularMass = MatrixInvert(MatrixAdd(worldInvInertiaA, worldInvInertiaB));
-			//
-			// Calculate the impulse needed to counteract velocity and correct position
-			Vector3 angularImpulse =
-				Vector3Transform(Vector3Negate(Vector3Add(relativeAngularVelocity, bias)), invAngularMass);
-
-			// Apply the angular impulse to both bodies
-			if (a.invMass > 0.0f)
+			else if (a.invMass > 0.0f)
 			{
-				a.angularVelocity =
-					Vector3Subtract(a.angularVelocity, Vector3Transform(angularImpulse, worldInvInertiaA));
+				Quaternion delta = QuaternionExp(Vector3Negate(angularError));
+				a.orientation = QuaternionNormalize(QuaternionMultiply(delta, a.orientation));
 			}
-			if (b.invMass > 0.0f)
+			else if (b.invMass > 0.0f)
 			{
-				b.angularVelocity = Vector3Add(b.angularVelocity, Vector3Transform(angularImpulse, worldInvInertiaB));
+				Quaternion delta = QuaternionExp(angularError);
+				b.orientation = QuaternionNormalize(QuaternionMultiply(b.orientation, delta));
 			}
-		}
+		} //==================================================
 
-		//================================================================
-		// 2. Linear Constraint - Forcing anchor points to be at the same position
-		//================================================================
+		//===========================================
+		// 2. Linear Constraint - Match Anchor Points
+		//===========================================
 		{
-			// Get the current world-space positions of the anchors
 			Vector3 worldAnchorA = Vector3Add(a.center, Vector3RotateByQuaternion(joint.localAnchorA, a.orientation));
 			Vector3 worldAnchorB = Vector3Add(b.center, Vector3RotateByQuaternion(joint.localAnchorB, b.orientation));
+			Vector3 error = Vector3Subtract(worldAnchorB, worldAnchorA);
 
-			// The error is simply the vector between the two anchors. We want this to be zero.
-			Vector3 errorVector = Vector3Subtract(worldAnchorB, worldAnchorA);
-			float errorMagnitude = Vector3Length(errorVector);
+			float errorLength = Vector3Length(error);
+			if (errorLength < 1e-5f)
+				continue;
+			Vector3 dir = Vector3Scale(error, 1.0f / errorLength);
 
-			if (errorMagnitude > 0.001f)
+			// Relative anchors
+			Vector3 rA = Vector3Subtract(worldAnchorA, a.center);
+			Vector3 rB = Vector3Subtract(worldAnchorB, b.center);
+
+			Vector3 raCrossN = Vector3CrossProduct(rA, dir);
+			Vector3 rbCrossN = Vector3CrossProduct(rB, dir);
+
+			Vector3 invInertiaRa = Vector3Transform(raCrossN, a.getWorldInverseInertiaTensor());
+			Vector3 invInertiaRb = Vector3Transform(rbCrossN, b.getWorldInverseInertiaTensor());
+
+			float angularFactor = Vector3DotProduct(Vector3CrossProduct(invInertiaRa, rA), dir) +
+								  Vector3DotProduct(Vector3CrossProduct(invInertiaRb, rB), dir);
+
+			float k = a.invMass + b.invMass + angularFactor;
+
+			if (k > 0.0f)
 			{
-				Vector3 errorNormal = Vector3Normalize(errorVector);
+				float lambda = -errorLength / k;
+				Vector3 impulse = Vector3Scale(dir, lambda * 0.1);
+				if (Vector3Length(impulse) > 0.3f)
+					impulse = Vector3Scale(Vector3Normalize(impulse), 0.3f);
 
-				// This section is now identical to your original resolveCollision function.
-				// We are essentially treating the separation of the anchor points as a "collision"
-				// with a penetration depth of 'errorMagnitude'.
-				Vector3 rA = Vector3Subtract(worldAnchorA, a.center);
-				Vector3 rB = Vector3Subtract(worldAnchorB, b.center);
-
-				Vector3 vA = Vector3Add(a.velocity, Vector3CrossProduct(a.angularVelocity, rA));
-				Vector3 vB = Vector3Add(b.velocity, Vector3CrossProduct(b.angularVelocity, rB));
-				Vector3 relativeVelocity = Vector3Subtract(vB, vA);
-				float contactVel = Vector3DotProduct(relativeVelocity, errorNormal);
-
-				float baumgarte = 0.4f;
-				float bias = (baumgarte / deltaTime) * errorMagnitude;
-
-				// Calculate the denominator for the impulse magnitude 'j'
-				Vector3 rAxn = Vector3CrossProduct(rA, errorNormal);
-				Vector3 rBxn = Vector3CrossProduct(rB, errorNormal);
-				Vector3 IArAxn = Vector3Transform(rAxn, a.getWorldInverseInertiaTensor());
-				Vector3 IBrBxn = Vector3Transform(rBxn, b.getWorldInverseInertiaTensor());
-
-				float denom = a.invMass + b.invMass + Vector3DotProduct(errorNormal, Vector3CrossProduct(IArAxn, rA)) +
-							  Vector3DotProduct(errorNormal, Vector3CrossProduct(IBrBxn, rB));
-
-				if (denom > 0.0f)
+				if (a.invMass > 0.0f)
 				{
-					// Calculate impulse magnitude 'j'
-					// Restitution is 0 for a fixed joint.
-					float j = -(contactVel + bias) / denom;
-					Vector3 impulse = Vector3Scale(errorNormal, j);
-
-					// Apply impulse
-					if (a.invMass > 0.0f)
-					{
-						a.velocity = Vector3Subtract(a.velocity, Vector3Scale(impulse, a.invMass));
-						a.angularVelocity =
-							Vector3Subtract(a.angularVelocity, Vector3Transform(Vector3CrossProduct(rA, impulse),
-																				a.getWorldInverseInertiaTensor()));
-					}
-					if (b.invMass > 0.0f)
-					{
-						b.velocity = Vector3Add(b.velocity, Vector3Scale(impulse, b.invMass));
-						b.angularVelocity =
-							Vector3Add(b.angularVelocity, Vector3Transform(Vector3CrossProduct(rB, impulse),
-																		   b.getWorldInverseInertiaTensor()));
-					}
+					a.center = Vector3Subtract(a.center, Vector3Scale(impulse, a.invMass));
+					Vector3 dOmegaA =
+						Vector3Transform(Vector3CrossProduct(rA, impulse), a.getWorldInverseInertiaTensor());
+					a.orientation =
+						QuaternionNormalize(QuaternionMultiply(a.orientation, QuaternionExp(Vector3Negate(dOmegaA))));
+				}
+				if (b.invMass > 0.0f)
+				{
+					b.center = Vector3Add(b.center, Vector3Scale(impulse, b.invMass));
+					Vector3 dOmegaB =
+						Vector3Transform(Vector3CrossProduct(rB, impulse), b.getWorldInverseInertiaTensor());
+					b.orientation = QuaternionNormalize(QuaternionMultiply(b.orientation, QuaternionExp(dOmegaB)));
 				}
 			}
 		}
@@ -254,7 +239,8 @@ void stepPhysicSimulation(entt::registry &registry)
 	entities.reserve(view.size_hint());
 	boundingBoxes.reserve(view.size_hint());
 
-	solveJoints(registry);
+	for (int i = 0; i < 100; ++i)
+		solveJoints(registry);
 
 	for (auto entity : view)
 	{
@@ -303,16 +289,12 @@ void stepPhysicSimulation(entt::registry &registry)
 			RigidBodyComponent &box2 = registry.get<RigidBodyComponent>(entities[idx]);
 			Vector3 contactNormal;
 			float penetration;
+			if (!box1.shouldCollideWith(box2))
+				continue;
 			if (checkOBBCollision(box1.obb, box2.obb, contactNormal, penetration))
 			{
 				if (penetration < 0.01f)
 					continue;
-				if (registry.any_of<FixedJoint>(entities[i]))
-				{
-					FixedJoint &joint = registry.get<FixedJoint>(entities[i]);
-					if (joint.a == entities[idx])
-						continue;
-				}
 				Vector3 contactPoint = findDeepestPoint(box2.obb, contactNormal);
 				resolveCollision(box1, box2, contactPoint, contactNormal, 0.6);
 				positionalCorrection(box1, box2, contactNormal, penetration);

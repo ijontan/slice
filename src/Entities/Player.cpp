@@ -32,5 +32,7 @@ void createPlayer(Scene &scene, bool active)
 
 	OBB obb = {};
 	obb.halfSize = Vector3Scale({0.5, 0.5, 0.5}, 0.5);
-	player.addComponent<RigidBodyComponent>(10, cam.target, (Vector3){}, (Vector3){}, (Matrix){}, obb);
+	RigidBodyComponent body(10, cam.target, (Vector3){}, (Vector3){}, CollisionMask::PLAYER, CollisionMask::ALL,
+							(Matrix){}, obb, QuaternionIdentity());
+	player.addComponent<RigidBodyComponent>(body);
 }

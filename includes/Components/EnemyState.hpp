@@ -28,6 +28,7 @@ struct EnemyPart
 	EnemyPartType type;
 	bool isAttached;
 	Entity entity;
+	Vector3 halfSize;
 };
 
 struct EnemyState
@@ -40,7 +41,7 @@ struct EnemyState
 
 	int getSize()
 	{
-		return size.x + size.y + size.z;
+		return size.x * size.y * size.z;
 	}
 
 	IVector3 getCoordFromIndex(int i)
