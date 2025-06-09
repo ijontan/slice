@@ -10,7 +10,7 @@
 #include <cmath>
 #include <iostream>
 
-void generateBody(EnemyState &state, Scene &scene, EnemyPart &partA, RigidBodyComponent &bodyA, IVector3 coord,
+static void generateBody(EnemyState &state, Scene &scene, EnemyPart &partA, RigidBodyComponent &bodyA, IVector3 coord,
 				  IVector3 next)
 {
 	BlockFactory blockFactory(scene);
@@ -100,3 +100,5 @@ void enemyRegenBodySystem(entt::registry &registry, Scene &scene)
 		}
 	}
 }
+
+

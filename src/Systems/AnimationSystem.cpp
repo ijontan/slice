@@ -1,8 +1,5 @@
 #include "AnimationSystem.hpp"
 #include "Shape.hpp"
-#include "raymath.h"
-#include <iostream>
-#include <ostream>
 
 void animateBlockSpawn(entt::registry &registry)
 {

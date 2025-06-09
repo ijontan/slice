@@ -38,10 +38,10 @@ void BlockFactory::randomize(){
 	float mass = 10;
 	setMass(mass);
 
-	Vector3 position = {randomFloat(-100, 100), randomFloat(1, 100), randomFloat(-100, 100)};
+	Vector3 position = {randomFloat(-200, 200), randomFloat(-200, 200), randomFloat(-200, 200)};
 	setPosition(position);
 
-	Vector3 dimension = {randomFloat(1, 5), randomFloat(1, 5), randomFloat(1, 5)};
+	Vector3 dimension = {randomFloat(3, 5), randomFloat(3, 5), randomFloat(3, 5)};
 	setDimension(dimension);
 
 	Vector3 velocity = {0, 0, 0};
@@ -77,6 +77,8 @@ Entity BlockFactory::generateBlock() const
 	// Mesh
 	Mesh mesh = GenMeshCube(dimension.x, dimension.y, dimension.z);
 	Model model = LoadModelFromMesh(mesh);
+	// set shader to first (and only) material.
+	model.materials->shader = scene.shader;
 	block.addComponent<BoxComponent>(model, color);
 
 	return block;

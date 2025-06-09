@@ -9,18 +9,21 @@ int main(void)
 {
 	int screenWidth = 1920;
 	int screenHeight = 1080;
+
+	SetConfigFlags(FLAG_MSAA_4X_HINT);
 	InitWindow(screenWidth, screenHeight, "Slicer");
 
 	DisableCursor();
 	SetTargetFPS(60);
 
-	Scene scene = Scene();
+	Scene *scene =new Scene();
 
 	while (!WindowShouldClose())
 	{
-		scene.render();
+		scene->render();
 	}
 
+	delete scene;
 	CloseWindow();
 	return 0;
 }

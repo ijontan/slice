@@ -18,9 +18,7 @@ void renderBlocks(entt::registry &registry)
 		{
 			auto box = registry.get<BoxComponent>(entity);
 			DrawModel(box.model, Vector3Zero(), box.scale, box.color);
-			DrawModelWires(box.model, Vector3Zero(), box.scale, BLACK);
 		}
-		DrawPlane((Vector3){0.0f, 0.0f, 0.0f}, (Vector2){1000.0f, 1000.0f}, DARKGRAY); // Draw ground
 		EndMode3D();
 	}
 }

@@ -14,4 +14,5 @@ public:
 	void render();
 
 	entt::registry m_registry;
+	Shader shader;
 };

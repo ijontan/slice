@@ -21,6 +21,8 @@ void createPlayer(Scene &scene, bool active)
 
 	Mesh mesh = GenMeshCube(0.5, 0.5, 0.5);
 	Model model = LoadModelFromMesh(mesh);
+	// set shader to first (and only) material.
+	model.materials->shader = scene.shader;
 	model.transform = MatrixTranslate(cam.target.x, cam.target.y, cam.target.z);
 	player.addComponent<BoxComponent>(model, PURPLE);
 
