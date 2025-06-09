@@ -11,7 +11,7 @@
 #include "raylib.h"
 #include "raymath.h"
 
-Matrix ComputeInverseInertiaTensor(float mass, Vector3 dimension)
+Matrix BlockFactory::computeInverseInertiaTensor() const
 {
 	// Dimensions are full extents, not half extents
 	float w = dimension.x;
@@ -29,19 +29,55 @@ Matrix ComputeInverseInertiaTensor(float mass, Vector3 dimension)
 	return MatrixInvert(inertia);
 }
 
-Entity setupBlock(Scene &scene, Vector3 position, Vector3 dimension, Vector3 angularVelocity, Vector3 velocity,
-				  CollisionMask category, unsigned int mask, Quaternion orientation)
+BlockFactory::BlockFactory(Scene &scene) : scene(scene)
+{
+	randomize();
+}
+
+void BlockFactory::randomize(){
+	float mass = 10;
+	setMass(mass);
+
+	Vector3 position = {randomFloat(-100, 100), randomFloat(1, 100), randomFloat(-100, 100)};
+	setPosition(position);
+
+	Vector3 dimension = {randomFloat(1, 5), randomFloat(1, 5), randomFloat(1, 5)};
+	setDimension(dimension);
+
+	Vector3 velocity = {0, 0, 0};
+	setVelocity(velocity);
+
+	Vector3 angularVelocity = {randomFloat(), randomFloat(), randomFloat()};
+	setAngularVelocity(angularVelocity);
+
+	Quaternion orientation = QuaternionIdentity();
+	setOrientation(orientation);
+
+	CollisionMask category = CollisionMask::FREE;
+	setCategory(category);
+
+	unsigned int mask = CollisionMask::ALL;
+	setCollisionMask(mask);
+
+	Color color = WHITE;
+	setColor(color);
+}
+
+Entity BlockFactory::generateBlock() const
 {
 	Entity block = scene.createEntity();
 
+	// rigid body
 	OBB obb = {};
 	obb.halfSize = Vector3Scale(dimension, 0.5);
-	RigidBodyComponent body(10, position, Vector3Scale(velocity, 10), angularVelocity, category, mask,
-							ComputeInverseInertiaTensor(10, dimension), obb, orientation);
+	RigidBodyComponent body(mass, position, velocity, angularVelocity, category, mask, computeInverseInertiaTensor(),
+							obb, orientation);
 	block.addComponent<RigidBodyComponent>(body);
 
+	// Mesh
 	Mesh mesh = GenMeshCube(dimension.x, dimension.y, dimension.z);
 	Model model = LoadModelFromMesh(mesh);
-	block.addComponent<BoxComponent>(model);
+	block.addComponent<BoxComponent>(model, color);
+
 	return block;
 }

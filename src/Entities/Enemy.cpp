@@ -5,6 +5,7 @@
 #include "RigidBody.hpp"
 #include "Scene.hpp"
 #include "math.hpp"
+#include "raylib.h"
 #include "raymath.h"
 #include <iostream>
 
@@ -18,20 +19,29 @@ void createEnemy(Scene &scene)
 	int size = state.getSize();
 	state.parts.reserve(size);
 
-	int coreIndex = size / 2 + 1;
+	int coreIndex = randomInt(0, size-1) ;
 	state.cores.push_back(state.getCoordFromIndex(coreIndex));
+
+	BlockFactory blockFactory(scene);
+	blockFactory.setPosition({randomFloat(-30, 30), 10, randomFloat(-30, 30)});
+	Vector3 halfSize = {1.0f, 1.0f, 1.0f};
+	blockFactory.setDimension(Vector3Scale(halfSize, 2.0f));
+	blockFactory.setVelocity({0.0f, 0.0f, 0.0f});
+	blockFactory.setAngularVelocity({0.0f, 0.0f, 0.0f});
+	blockFactory.setCategory(CollisionMask::ENEMY);
+	blockFactory.setCollisionMask(CollisionMask::FREE | CollisionMask::PLAYER);
+	blockFactory.setOrientation(QuaternionIdentity());
 
 	for (int i = 0; i < size; i++)
 	{
 		EnemyPart part = {};
-		part.halfSize = {1.0f, 1.0f, 1.0f};
+		part.halfSize = halfSize;
 		if (i == coreIndex)
 		{
 			part.type = CORE;
 			part.isAttached = true;
-			part.entity = setupBlock(scene, {randomFloat(-30, 30), 10, randomFloat(-30, 30)},
-									 Vector3Scale(part.halfSize, 2.0f), {0, 0, 0}, {0, 0, 0}, CollisionMask::ENEMY,
-									 CollisionMask::FREE | CollisionMask::PLAYER, QuaternionIdentity());
+			blockFactory.setColor(YELLOW);
+			part.entity = blockFactory.generateBlock();
 		}
 		else
 		{

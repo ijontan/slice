@@ -13,6 +13,10 @@
 void generateBody(EnemyState &state, Scene &scene, EnemyPart &partA, RigidBodyComponent &bodyA, IVector3 coord,
 				  IVector3 next)
 {
+	BlockFactory blockFactory(scene);
+	blockFactory.setCategory(CollisionMask::ENEMY);
+	blockFactory.setCollisionMask(CollisionMask::FREE | CollisionMask::PLAYER);
+
 	EnemyPart &partB = state.getPartRef({
 		coord.x + next.x,
 		coord.y + next.y,
@@ -28,8 +32,14 @@ void generateBody(EnemyState &state, Scene &scene, EnemyPart &partA, RigidBodyCo
 				  fabsf((float)next.z) * (partA.halfSize.z + partB.halfSize.z);
 
 	Vector3 position = Vector3Add(bodyA.center, Vector3Scale(direction, scale));
-	partB.entity = setupBlock(scene, position, Vector3Scale(partB.halfSize, 2.0f), {0, 0, 0}, {0, 0, 0},
-							  CollisionMask::ENEMY, CollisionMask::FREE | CollisionMask::PLAYER, bodyA.orientation);
+	blockFactory.setPosition(position);
+	blockFactory.setDimension(Vector3Scale(partB.halfSize, 2.0f));
+	blockFactory.setVelocity({0.0f, 0.0f, 0.0f});
+	blockFactory.setAngularVelocity({0.0f, 0.0f, 0.0f});
+	blockFactory.setVelocity(bodyA.velocity);
+	blockFactory.setAngularVelocity(bodyA.angularVelocity);
+	blockFactory.setOrientation(bodyA.orientation);
+	partB.entity = blockFactory.generateBlock();
 
 	joint.localAnchorA = {partA.halfSize.x * (float)next.x, partA.halfSize.y * (float)next.y,
 						  partA.halfSize.z * (float)next.z};

@@ -1,4 +1,5 @@
 
+#include "AnimationSystem.hpp"
 #include "Block.hpp"
 #include "Enemy.hpp"
 #include "EnemySystem.hpp"
@@ -16,6 +17,7 @@
 
 Scene::Scene()
 {
+	BlockFactory blockFactory(*this);
 
 	createPlayer(*this, true);
 	createEnemy(*this);
@@ -24,7 +26,10 @@ Scene::Scene()
 	createEnemy(*this);
 
 	for (int i = 0; i < 300; i++)
-		setupBlock(*this);
+	{
+		blockFactory.randomize();
+		blockFactory.generateBlock();
+	}
 }
 
 Scene::~Scene(void)
@@ -52,9 +57,8 @@ void Scene::render()
 	BeginDrawing();
 	ClearBackground(LIGHTGRAY);
 
-	renderBlocks(m_registry);
-
+	animateBlockSpawn(m_registry);
 	stepPhysicSimulation(m_registry);
-
+	renderBlocks(m_registry);
 	EndDrawing();
 }

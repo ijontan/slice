@@ -1,5 +1,4 @@
 #include "Entities/Player.hpp"
-#include "Camera.hpp"
 #include "Entity.hpp"
 #include "PlayerState.hpp"
 #include "RigidBody.hpp"

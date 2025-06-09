@@ -2,3 +2,4 @@ slicer
 a.out
 d.out
 obj/
+.clangd

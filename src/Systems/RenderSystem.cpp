@@ -17,19 +17,8 @@ void renderBlocks(entt::registry &registry)
 		for (auto entity : view)
 		{
 			auto box = registry.get<BoxComponent>(entity);
-			// auto rigidBody = registry.get<RigidBodyComponent>(entity);
-			// Matrix translate = MatrixTranslate(rigidBody.center.x, rigidBody.center.y, rigidBody.center.z);
-			// Matrix model = MatrixMultiply(rigidBody.orientation, translate);
-			// Vector3 axis;
-			// float angle;
-			// QuaternionToAxisAngle(rigidBody.orientation, &axis, &angle);
-			// angle = angle / PI * 180;
-			// DrawModelEx(box.model, rigidBody.center, axis, angle, {1.0f, 1.0f, 1.0f}, WHITE);
-			// DrawModelWiresEx(box.model, rigidBody.center, axis, angle, {1.0f, 1.0f, 1.0f}, BLACK);
-			DrawModel(box.model, Vector3Zero(), 1, box.color);
-			DrawModelWires(box.model, Vector3Zero(), 1, BLACK);
-			// DrawBoundingBox(box.boundingBox, BLACK);
-			// DrawMesh(box.mesh, box.material, model);
+			DrawModel(box.model, Vector3Zero(), box.scale, box.color);
+			DrawModelWires(box.model, Vector3Zero(), box.scale, BLACK);
 		}
 		DrawPlane((Vector3){0.0f, 0.0f, 0.0f}, (Vector2){1000.0f, 1000.0f}, DARKGRAY); // Draw ground
 		EndMode3D();
