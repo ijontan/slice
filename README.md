@@ -1,25 +1,26 @@
-# 3rd person ARPG Slicing machenic testing game
+# 3rd person Slicing machenic testing game
 
 A machanic testing game built using [raylib](https://www.raylib.com/) and [entt](https://github.com/skypjack/entt). Slicing enemy and physics!!
+goal is to create a 3d Game but I can slice enemy like fruit ninja with my mouse.
 
 ## 🎮 Features
 
-- 3D environment
-- ECS architecture using `entt`
-- physics!!!
-- detachable enemy body
-- enemy Body generation using flood fill
-- Custom raymarching shaders
+- [x] 3D environment
+- [x] ECS architecture using `entt`
+- [x] physics!!!
+- [x] BVH for collision optimization
+- [x] enemy Body generation using flood fill
+- [ ] detachable enemy body
+- [ ] detachable enemy body
 
 ## 🕹️ Controls
 
 | Action         | Key |
 |----------------|-----|
-| Move           | `W`, `S` |
-| Rotate (pitch/yaw/roll) | Arrow keys, `A`, `D` |
-| Shoot          | `Space` or `Left Mouse Button` |
-| Look Back      | `Shift` |
-| Restart        | `R` |
+| Move           | `W`, `A`, `S`, `D` |
+| Accelerate          | `Space` |
+| Decelerate     | `Shift` |
+| close     | `ESC` |
 
 ## 📸 Snapshots
 
