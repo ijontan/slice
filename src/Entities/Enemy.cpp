@@ -14,7 +14,7 @@ void createEnemy(Scene &scene)
 	Entity enemy = scene.createEntity();
 	EnemyState state = {};
 	state.size = {3, 3, 3};
-	state.regenDuration = 0.2;
+	state.regenDuration = 1.0f;
 
 	int size = state.getSize();
 	state.parts.reserve(size);

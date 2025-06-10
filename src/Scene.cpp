@@ -39,12 +39,12 @@ Scene::Scene()
 	lights[1] = CreateLight(LIGHT_POINT, (Vector3){-5000, 0, 0}, Vector3Zero(), Color({40, 30, 20, 255}), shader);
 
 	createPlayer(*this, true);
-	createEnemy(*this);
-	createEnemy(*this);
-	createEnemy(*this);
-	createEnemy(*this);
+	// createEnemy(*this);
+	// createEnemy(*this);
+	// createEnemy(*this);
+	// createEnemy(*this);
 
-	for (int i = 0; i < 800; i++)
+	for (int i = 0; i < 2000; i++)
 	{
 		blockFactory.randomize();
 		blockFactory.generateBlock();

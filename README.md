@@ -23,14 +23,13 @@ A machanic testing game built using [raylib](https://www.raylib.com/) and [entt]
 
 ## 📸 Snapshots
 
-### Gameplay View
-![Gameplay](assets/snapshots/img_7.png)
+### Physics
+![Collision](assets/demo/physics_demo_collision.gif)
+![2k Body](assets/demo/physics_demo_2k_body.gif)
 
-### Enemy Lock-on and Targeting
-![Targeting](assets/snapshots/img_6.png)
+### Enemy Body Regen
+![Body Regen](assets/demo/body_regen.gif)
 
-### Game Over Screen
-![Game Over](assets/snapshots/img_8.png)
 
 ## Getting Started
 
