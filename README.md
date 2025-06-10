@@ -25,10 +25,14 @@ goal is to create a 3d Game but I can slice enemy like fruit ninja with my mouse
 ## 📸 Snapshots
 
 ### Physics
+Impulsed based Collision physics
 ![Collision](assets/demo/physics_demo_collision.gif)
+
+2k collision object in a single scene
 ![2k Body](assets/demo/physics_demo_2k_body.gif)
 
-### Enemy Body Regen
+### Enemy
+Regenerating Enemy Body
 ![Body Regen](assets/demo/body_regen.gif)
 
 
