@@ -11,7 +11,7 @@ goal is to create a 3d Game but I can slice enemy like fruit ninja with my mouse
 - [x] BVH for collision optimization
 - [x] enemy Body generation using flood fill
 - [ ] detachable enemy body
-- [ ] detachable enemy body
+- [ ] slice enemy
 
 ## 🕹️ Controls
 
